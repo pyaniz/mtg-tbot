@@ -33,9 +33,9 @@ class Arena:
 class Start:
     start_pvt = "You are successfully registered on this bot :)\n"
     start_id = "your telegram ID is `{}` and this group id is `{}`"
-    welcome = "welcome, fellow planeswalker! You are now registered in my book of spells.\n" \
-              "If you need anything, you can ask me help using `/help` via pvt.\n" \
-              "Oh, by the way, this group ID is {}. Use it to set up RSS feeds!"
+    welcome = "Welcome to Eron's Library.\n" \
+              "If you need anything, you can ask me help using `/help` via pvt.\n"
+              
 
 
 class Card:
