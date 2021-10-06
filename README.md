@@ -40,3 +40,5 @@ I can't provide any ETA because I'm working on this project during my free time
 
 ## Documentation
 I'm trying my best to provide in-detailed documentation in the [wiki section](https://github.com/A7F/mtg-telegram-assistant/wiki), along with install instructions, usage description and so on.
+
+Testing environment
