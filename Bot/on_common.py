@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 @util.send_action(ChatAction.UPLOAD_PHOTO)
 def cards(update: Update, context: CallbackContext):
-    match = re.findall(r'\[\[(.*?)\]\]', update.message.text)
+    match = re.findall(r'\[(.*?)\]', update.message.text)
     asyncio.set_event_loop(asyncio.new_event_loop())
     is_flipcard = False
     photos = []
