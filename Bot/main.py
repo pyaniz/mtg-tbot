@@ -6,7 +6,7 @@
 from on_pvt import *
 from on_group import *
 from on_common import *
-from telegram import InlineQueryResultArticle, InputTextMessageContent
+from telegram import InlineQueryResultPhoto, InputTextMessageContent, InlineQueryResultArticle
 from telegram.ext import Updater, InlineQueryHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, CommandHandler, Filters
 import tasks
@@ -61,70 +61,7 @@ finally:
 def error(update, context):
     logger.error('An error occurred! "%s"', context.error)
     raise
-
-
-""" def inline(update: Update, context: CallbackContext):
-    try:
-        user = tables.User.get(tables.User.user_id == update.inline_query.from_user.id)
-        text = strings.Inline.player_card_text.format(user.name if not None else "", user.user_id,
-                                                      user.dci if not None else "",
-                                                      user.arena if not None else "")
-    except DoesNotExist:
-        text = strings.Global.user_not_exist
-
-    results = list()
-    results.append(
-        InlineQueryResultArticle(
-            id="PLAYERCARD",
-            title=strings.Inline.player_card_title,
-            description=strings.Inline.player_card_desc,
-            input_message_content=InputTextMessageContent(text,
-                                                          parse_mode=telegram.ParseMode.MARKDOWN,
-                                                          disable_web_page_preview=True)
-        )
-    )
-    context.bot.answer_inline_query(update.inline_query.id, results, cache_time=10) """
-
-""" def inline(update: Update, context: CallbackContext) -> None:
-
-    query = update.inline_query.query
-
-    if query == "":
-        return
-
-    results = [
-        InlineQueryResultArticle(
-            id=str(uuid4()),
-            title="Caps",
-            input_message_content=InputTextMessageContent(query.upper()),
-        ),
-        InlineQueryResultArticle(
-            id=str(uuid4()),
-            title="Bold",
-            input_message_content=InputTextMessageContent(
-                f"*{escape_markdown(query)}*", parse_mode=ParseMode.MARKDOWN
-            ),
-        ),
-        InlineQueryResultArticle(
-            id=str(uuid4()),
-            title="Italic",
-            input_message_content=InputTextMessageContent(
-                f"_{escape_markdown(query)}_", parse_mode=ParseMode.MARKDOWN
-            ),
-        ),
-    ]
-
-    update.inline_query.answer(results)
- """
-
-
-
-"""
-def inline(update: Update, context: CallbackContext) -> None:
-    match = re.findall(r'\[(.*?)\]', update.message.text)
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    is_flipcard = False
-"""
+    
 def inline(update: Update, context: CallbackContext):
     query = update.inline_query.query
     asyncio.set_event_loop(asyncio.new_event_loop())
@@ -137,17 +74,25 @@ def inline(update: Update, context: CallbackContext):
     if len(auto.data()) > 0:
         text = ""
         results_data = []
-        for index, item in zip(range(9), auto.data()):
+        for index, item in zip(range(5), auto.data()):
             card = scrython.cards.Named(fuzzy=item)            
             results_data.append(
-                InlineQueryResultArticle(
+#                InlineQueryResultArticle(
+#                    id=card.id(),
+#                    title=card.name(),
+#                    input_message_content=InputTextMessageContent(
+#                        f"*{escape_markdown(card.name())}*", parse_mode=ParseMode.MARKDOWN
+#                        ),            
+#                    ),
+                InlineQueryResultPhoto(
                     id=card.id(),
+                    photo_url=card.image_uris(0, image_type="normal"),
+                    thumb_url=card.image_uris(0, image_type="normal"),
                     title=card.name(),
-                    input_message_content=InputTextMessageContent(
-                        f"*{escape_markdown(card.name())}*", parse_mode=ParseMode.MARKDOWN
-                        ),            
-                    ),
-                )            
+                    description=card.name()
+                ),        
+                
+            )            
         #print(index)
         update.inline_query.answer(results_data)
 
