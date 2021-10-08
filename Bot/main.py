@@ -61,39 +61,57 @@ finally:
 def error(update, context):
     logger.error('An error occurred! "%s"', context.error)
     raise
-    
+
+
+def test(update: Update, context: CallbackContext):
+    print("worked")
+
 def inline(update: Update, context: CallbackContext):
     query = update.inline_query.query
     asyncio.set_event_loop(asyncio.new_event_loop())
     is_flipcard = False #defines whether its a flipcard or not. This is just a variable, will be used to determine multiple images.
-    print(query)
+#    print(query)
     if query == "":
         return
-    
+
+    match = re.findall('/r', query)
+    cleanmatch = re.findall(r'\/r ([\s\S]*)$', query)            
+    print(match)
+    print(cleanmatch)
+    print(query)
     auto = scrython.cards.Autocomplete(q=query, query=query)
+    
     if len(auto.data()) > 0:
         text = ""
         results_data = []
-        for index, item in zip(range(5), auto.data()):
-            card = scrython.cards.Named(fuzzy=item)            
-            results_data.append(
-#                InlineQueryResultArticle(
-#                    id=card.id(),
-#                    title=card.name(),
-#                    input_message_content=InputTextMessageContent(
-#                        f"*{escape_markdown(card.name())}*", parse_mode=ParseMode.MARKDOWN
-#                        ),            
-#                    ),
-                InlineQueryResultPhoto(
-                    id=card.id(),
-                    photo_url=card.image_uris(0, image_type="normal"),
-                    thumb_url=card.image_uris(0, image_type="normal"),
-                    title=card.name(),
-                    description=card.name()
-                ),        
-                
-            )            
-        #print(index)
+        if match == ['/r']:
+        
+
+
+            for index, item in zip(range(5), auto.data()):
+                card = scrython.cards.Named(fuzzy=item)            
+                results_data.append(
+                    InlineQueryResultArticle(
+                        id=card.id(),
+                        title=card.name(),
+                        input_message_content=InputTextMessageContent(
+                            f"*{escape_markdown(card.name())}*", parse_mode=ParseMode.MARKDOWN
+                            ),            
+                        )
+                    )
+        else:
+            for index, item in zip(range(5), auto.data()):
+                card = scrython.cards.Named(fuzzy=item)            
+                results_data.append(
+                    InlineQueryResultPhoto(
+                        id=card.id(),
+                        photo_url=card.image_uris(0, image_type="normal"),
+                        thumb_url=card.image_uris(0, image_type="normal"),
+                        title=card.name(),
+                        description=card.name()
+                    ),                            
+                )            
+            #print(index)
         update.inline_query.answer(results_data)
 
 
@@ -124,7 +142,7 @@ dispatcher.add_handler(CommandHandler('arena', callback=arena, filters=Filters.p
 dispatcher.add_handler(CommandHandler('name', callback=name, filters=Filters.private))
 dispatcher.add_handler(CommandHandler('help', callback=help_pvt, filters=Filters.private))
 dispatcher.add_handler(MessageHandler(Filters.private and Filters.document, logparser))
-dispatcher.add_handler(MessageHandler(Filters.regex('\[ex(.*?)\]'), cards))
+dispatcher.add_handler(MessageHandler(Filters.regex('\[(.*?)\]'), cards))
 dispatcher.add_handler(MessageHandler(Filters.regex('\(\((.*?)\)\)'), rulings))
 dispatcher.add_handler(MessageHandler(Filters.text & Filters.group, register_users))
 dispatcher.add_handler(InlineQueryHandler(inline))
