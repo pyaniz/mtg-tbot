@@ -79,39 +79,78 @@ def inline(update: Update, context: CallbackContext):
     print(match)
     print(cleanmatch)
     print(query)
-    auto = scrython.cards.Autocomplete(q=query, query=query)
     
-    if len(auto.data()) > 0:
+    
+    if len(query) > 0:
+        
         text = ""
         results_data = []
+        footer_list = []
         if match == ['/r']:
+            auto = scrython.cards.Autocomplete(q=cleanmatch, query=cleanmatch)
         
-
-
             for index, item in zip(range(5), auto.data()):
                 card = scrython.cards.Named(fuzzy=item)            
+                rule = scrython.rulings.Id(id=card.id())               
+                message = ""
+
+                if rule.data_length() == 0:
+                    message = strings.Card.card_ruling_unavailable
+                else:
+                    for index, rule_text in enumerate(rule.data()):
+                        message += (str(index + 1) + ". " + rule.data(index=index, key="comment") + "\n\n")
+                
+                time.sleep(0.07)                
+ 
                 results_data.append(
                     InlineQueryResultArticle(
                         id=card.id(),
                         title=card.name(),
+                        thumb_url=card.image_uris(0, image_type="normal"),
                         input_message_content=InputTextMessageContent(
-                            f"*{escape_markdown(card.name())}*", parse_mode=ParseMode.MARKDOWN
+                            f"*{escape_markdown(card.name())}*" + "\n\n" + message, parse_mode=ParseMode.MARKDOWN
                             ),            
+                        url=card.image_uris(0, image_type="normal"),
+                        hide_url=True,
                         )
                     )
         else:
-            for index, item in zip(range(5), auto.data()):
+            auto = scrython.cards.Autocomplete(q=query, query=query)
+            for index, item in zip(range(10), auto.data()):
                 card = scrython.cards.Named(fuzzy=item)            
+############ Card legalities ######################
+                del card.legalities()["penny"]
+                del card.legalities()["oldschool"]
+                del card.legalities()["future"]
+                del card.legalities()["duel"]
+                banned_in = [k for k, v in card.legalities().items() if v == "banned" or v == "not_legal"]
+                legal_in = [k for k, v in card.legalities().items() if v == "legal"]
+                legal_text = ""
+
+                if len(banned_in) == 0:
+                    legal_text = strings.Card.card_legal
+                else:
+                    footer_list.append(InlineKeyboardButton("Legalities", callback_data=card.name()))
+                    for v in legal_in:
+                        legal_text += ':white_check_mark: {}\n'.format(v)
+                    for v in banned_in:
+                        legal_text += ':no_entry: {}\n'.format(v)
+                    cacheable.CACHED_LEGALITIES.update({card.name(): legal_text})
+############ Card legalities ######################
                 results_data.append(
                     InlineQueryResultPhoto(
                         id=card.id(),
-                        photo_url=card.image_uris(0, image_type="normal"),
-                        thumb_url=card.image_uris(0, image_type="normal"),
                         title=card.name(),
-                        description=card.name()
+                        caption=card.name(),
+                        photo_url=card.image_uris(0, image_type="normal"),
+                        thumb_url=card.image_uris(0, image_type="normal"),                        
+                        description=card.name(),
+                        reply_markup = InlineKeyboardMarkup(util.build_menu(buttons=footer_list,
+                                                    n_cols=1))
                     ),                            
                 )            
             #print(index)
+                time.sleep(0.07)
         update.inline_query.answer(results_data)
 
 
