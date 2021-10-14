@@ -73,7 +73,7 @@ def inline(update: Update, context: CallbackContext):
 #    print(query)
     if query == "":
         return
-
+    is_flipcard = False
     match = re.findall('/r', query)
     cleanmatch = re.findall(r'\/r ([\s\S]*)$', query)            
     print(match)
@@ -137,18 +137,40 @@ def inline(update: Update, context: CallbackContext):
                         legal_text += ':no_entry: {}\n'.format(v)
                     cacheable.CACHED_LEGALITIES.update({card.name(): legal_text})
 ############ Card legalities ######################
-                results_data.append(
-                    InlineQueryResultPhoto(
-                        id=card.id(),
-                        title=card.name(),
-                        caption=card.name(),
-                        photo_url=card.image_uris(0, image_type="normal"),
-                        thumb_url=card.image_uris(0, image_type="normal"),                        
-                        description=card.name(),
-                        reply_markup = InlineKeyboardMarkup(util.build_menu(buttons=footer_list,
-                                                    n_cols=1))
-                    ),                            
-                )            
+                try:
+                    card.card_faces()[0]['image_uris']
+                    is_flipcard = True
+                except KeyError:
+                    is_flipcard = False
+                    pass
+                if is_flipcard:
+                    print("is flipcard")
+#                    for index2, item2 in zip(range(10), card.card_faces()):
+#                        results_data.append(
+#                            InlineQueryResultPhoto(
+#                                id=card.id(),
+#                                title=card.name(),
+#                                caption=card.name(),
+#                                photo_url=card.image_uris(0, image_type="normal"),
+#                                thumb_url=item2['image_uris']['normal'],                        
+#                                description=card.name(),
+#                                reply_markup = InlineKeyboardMarkup(util.build_menu(buttons=footer_list,
+#                                                            n_cols=1))
+#                            ),                            
+#                        )
+                else:
+                    results_data.append(
+                        InlineQueryResultPhoto(
+                            id=card.id(),
+                            title=card.name(),
+                            caption=card.name(),
+                            photo_url=card.image_uris(0, image_type="normal"),
+                            thumb_url=card.image_uris(0, image_type="normal"),                        
+                            description=card.name(),
+                            reply_markup = InlineKeyboardMarkup(util.build_menu(buttons=footer_list,
+                                                        n_cols=1))
+                        ),                            
+                    )            
             #print(index)
                 time.sleep(0.07)
         update.inline_query.answer(results_data)
