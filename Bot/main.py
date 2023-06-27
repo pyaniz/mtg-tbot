@@ -11,6 +11,9 @@ from telegram.ext import Updater, InlineQueryHandler, CallbackQueryHandler
 from telegram.ext import MessageHandler, CommandHandler, Filters
 import tasks
 import os #dev env check
+import requests
+import json
+
 
 #test
 from uuid import uuid4
@@ -66,6 +69,9 @@ def error(update, context):
 def test(update: Update, context: CallbackContext):
     print("worked")
 
+
+#async def card_print()
+
 def inline(update: Update, context: CallbackContext):
     query = update.inline_query.query
     asyncio.set_event_loop(asyncio.new_event_loop())
@@ -75,17 +81,15 @@ def inline(update: Update, context: CallbackContext):
         return
 
     match = re.findall('/r', query)
-    cleanmatch = re.findall(r'\/r ([\s\S]*)$', query)            
-    print(match)
-    print(cleanmatch)
-    print(query)
-    
-    
+    cleanmatch = re.findall(r'\/r ([\s\S]*)$', query)
+    matchp = re.findall('/p', query)
+    cleanmatchp = re.findall(r'\/p ([\s\S]*)$', query) 
+    results_data = []
+    footer_list = []    
     if len(query) > 0:
         
         text = ""
-        results_data = []
-        footer_list = []
+
         if match == ['/r']:
             auto = scrython.cards.Autocomplete(q=cleanmatch, query=cleanmatch)
         
@@ -114,8 +118,52 @@ def inline(update: Update, context: CallbackContext):
                         hide_url=True,
                         )
                     )
+            update.inline_query.answer(results_data)
+        elif matchp == ['/p']:
+#            auto = scrython.cards.Autocomplete(q=cleanmatchp, query=cleanmatchp)
+            
+            card = scrython.cards.Named(fuzzy=cleanmatchp)
+            print(card.prints_search_uri())
+            response = requests.get(card.prints_search_uri())
+            if response.status_code == 200:
+                data = json.loads(response.text)
+                imageval = data['data'][0]['image_uris']['small']
+                print(imageval)
+#               Load newly obtained index in variable                
+                indexval = data['data']
+                count = 0
+                for index, item in zip(range(20), indexval):
+                             
+#                     results_data.append(
+#                         InlineQueryResultPhoto(
+#                             id=item['id'],
+# #                           title=item['name'],
+# #                            caption=item['set_name'],
+#                             photo_url=item['image_uris']['normal'],
+#                             thumb_url=item['image_uris']['normal'],
+# #                            description=item['name'],
+#                             )                           
+#                         )               
+#           time.sleep(0.07)       
+
+                
+                    message = '['+item['name'] + " - " +item['set_name']+']('+item['image_uris']['normal']+')'
+                    results_data.append(
+                        InlineQueryResultArticle(
+                            id=item['id'],
+                            title=item['name'] + " - " +item['set_name'],
+                            thumb_url=item['image_uris']['art_crop'],
+                            thumb_width=100,  # Thumbnail width (optional)
+                            thumb_height=100, 
+                            input_message_content=InputTextMessageContent(message, parse_mode=ParseMode.MARKDOWN),     
+                            url=item['image_uris']['normal'],
+                            hide_url=True,
+                        )
+                    )
+            update.inline_query.answer(results_data)                
         else:
             auto = scrython.cards.Autocomplete(q=query, query=query)
+#            auto = scrython.cards.Autocomplete(q=cleanmatch, query=cleanmatch)
             for index, item in zip(range(10), auto.data()):
                 card = scrython.cards.Named(fuzzy=item)            
 ############ Card legalities ######################
@@ -151,7 +199,7 @@ def inline(update: Update, context: CallbackContext):
                 )            
             #print(index)
                 time.sleep(0.07)
-        update.inline_query.answer(results_data)
+                update.inline_query.answer(results_data)
 
 
   
@@ -169,13 +217,13 @@ def inline(update: Update, context: CallbackContext):
 if config["welcome"]:
     dispatcher.add_handler(MessageHandler(Filters.status_update.new_chat_members, welcome_message))
 dispatcher.add_handler(CommandHandler('start', callback=start_pvt, filters=Filters.private))
-dispatcher.add_handler(CommandHandler('start', callback=start_group, filters=Filters.group))
-dispatcher.add_handler(CommandHandler('rotation', callback=check_rotation, filters=(Filters.private | Filters.group)))
-dispatcher.add_handler(CommandHandler('banlist', callback=cards_banlist, filters=(Filters.private | Filters.group)))
+dispatcher.add_handler(CommandHandler('start', callback=start_group, filters=Filters.chat_type.group))
+dispatcher.add_handler(CommandHandler('rotation', callback=check_rotation, filters=(Filters.private | Filters.chat_type.group)))
+dispatcher.add_handler(CommandHandler('banlist', callback=cards_banlist, filters=(Filters.private | Filters.chat_type.group)))
 dispatcher.add_handler(CommandHandler('social', callback=social_pvt, filters=Filters.private))
-dispatcher.add_handler(CommandHandler('social', callback=social, filters=Filters.group))
-dispatcher.add_handler(CommandHandler('friendlist', callback=friend_list, filters=Filters.group))
-dispatcher.add_handler(CommandHandler('status', callback=arena_status, filters=Filters.group))
+dispatcher.add_handler(CommandHandler('social', callback=social, filters=Filters.chat_type.group))
+dispatcher.add_handler(CommandHandler('friendlist', callback=friend_list, filters=Filters.chat_type.group))
+dispatcher.add_handler(CommandHandler('status', callback=arena_status, filters=Filters.chat_type.group))
 dispatcher.add_handler(CommandHandler('dci', callback=dci, filters=Filters.private))
 dispatcher.add_handler(CommandHandler('arena', callback=arena, filters=Filters.private))
 dispatcher.add_handler(CommandHandler('name', callback=name, filters=Filters.private))
@@ -183,10 +231,11 @@ dispatcher.add_handler(CommandHandler('help', callback=help_pvt, filters=Filters
 dispatcher.add_handler(MessageHandler(Filters.private and Filters.document, logparser))
 dispatcher.add_handler(MessageHandler(Filters.regex('\[(.*?)\]'), cards))
 dispatcher.add_handler(MessageHandler(Filters.regex('\(\((.*?)\)\)'), rulings))
-dispatcher.add_handler(MessageHandler(Filters.text & Filters.group, register_users))
+dispatcher.add_handler(MessageHandler(Filters.text & Filters.chat_type.group, register_users))
 dispatcher.add_handler(InlineQueryHandler(inline))
 # dispatcher.add_handler(CallbackQueryHandler(callback=help_cb))
 dispatcher.add_handler(CallbackQueryHandler(legalities, pattern=r'.*'))
+#dispatcher.add_handler(CallbackQueryHandler(legalities, pattern=p'.*'))
 #dispatcher.add_handler(CommandHandler('test', callback=test, filters=Filters.private))
 
 dispatcher.add_error_handler(error)
